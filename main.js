@@ -32,26 +32,29 @@ const leftWall = Bodies.rectangle(0, height / 2, 40, height, { isStatic: true })
 const rightWall = Bodies.rectangle(width, height / 2, 40, height, { isStatic: true });
 World.add(world, [ground, leftWall, rightWall]);
 
-// Gutters detect when the ball leaves the lane
+// Pins setup (diamond arrangement)
+const pinRadius = 15;
+const startX = width / 2;
+// Pins should lie near the bottom of the screen in a top-down view
+const startY = height - 100;
+// Space between pins (doubled from the original layout)
+const pinSpacing = pinRadius * 5;
+
+// Gutters detect when the ball leaves the lane. The gap from the outermost
+// pin to each gutter equals half the width of the full pin formation.
 const gutterWidth = 80;
-const gutterLeft = Bodies.rectangle(40 + gutterWidth / 2, height / 2, gutterWidth, height, {
+// Distance from center to each gutter so the gap from outer pin to gutter
+// equals half the pin formation width
+const gutterOffset = pinSpacing * 2;
+const gutterLeft = Bodies.rectangle(startX - gutterOffset, height / 2, gutterWidth, height, {
   isStatic: true,
   isSensor: true
 });
-const gutterRight = Bodies.rectangle(width - (40 + gutterWidth / 2), height / 2, gutterWidth, height, {
+const gutterRight = Bodies.rectangle(startX + gutterOffset, height / 2, gutterWidth, height, {
   isStatic: true,
   isSensor: true
 });
 World.add(world, [gutterLeft, gutterRight]);
-
-// Pins setup (diamond arrangement)
-const pinRadius = 15;
-const startX = width / 2;
-// Original starting height, used now that gravity is disabled so
-// the pins stay in place.
-const startY = height / 4;
-// Space between pins (doubled from the original layout)
-const pinSpacing = pinRadius * 5;
 let pins = [];
 
 function setupPins() {
@@ -75,6 +78,15 @@ setupPins();
 const ball = Bodies.circle(width / 2, height - 60, 20, { restitution: 0.5 });
 World.add(world, ball);
 
+// Velocity limit control
+const maxVelocityInput = document.getElementById('maxVelocity');
+let maxVelocity = 20;
+maxVelocityInput.value = maxVelocity;
+maxVelocityInput.addEventListener('input', () => {
+  const v = parseFloat(maxVelocityInput.value);
+  if (!isNaN(v)) maxVelocity = v;
+});
+
 // Mouse control
 const mouse = Mouse.create(render.canvas);
 const mouseConstraint = MouseConstraint.create(engine, {
@@ -86,6 +98,17 @@ const mouseConstraint = MouseConstraint.create(engine, {
 });
 World.add(world, mouseConstraint);
 render.mouse = mouse;
+
+// Clamp ball velocity based on user input
+Events.on(engine, 'beforeUpdate', () => {
+  const vx = ball.velocity.x;
+  const vy = ball.velocity.y;
+  const speed = Math.sqrt(vx * vx + vy * vy);
+  if (speed > maxVelocity && speed !== 0) {
+    const scale = maxVelocity / speed;
+    Body.setVelocity(ball, { x: vx * scale, y: vy * scale });
+  }
+});
 
 // Reset button handler
 document.getElementById('resetButton').addEventListener('click', reset);
