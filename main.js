@@ -106,13 +106,20 @@ maxVelocityInput.addEventListener('input', () => {
 const spinSlider = document.getElementById('spinSlider');
 const minSpinInput = document.getElementById('minSpin');
 const maxSpinInput = document.getElementById('maxSpin');
+const spinValueDisplay = document.getElementById('spinValue');
+const SPIN_CURVE_FORCE = 0.0005;
 let minSpin = -1;
 let maxSpin = 1;
 spinSlider.min = minSpin;
 spinSlider.max = maxSpin;
 spinSlider.value = 0;
+spinValueDisplay.textContent = '0';
 minSpinInput.value = minSpin;
 maxSpinInput.value = maxSpin;
+
+spinSlider.addEventListener('input', () => {
+  spinValueDisplay.textContent = spinSlider.value;
+});
 
 minSpinInput.addEventListener('input', () => {
   const v = parseFloat(minSpinInput.value);
@@ -120,6 +127,7 @@ minSpinInput.addEventListener('input', () => {
     minSpin = v;
     spinSlider.min = v;
     if (parseFloat(spinSlider.value) < v) spinSlider.value = v;
+    spinValueDisplay.textContent = spinSlider.value;
   }
 });
 
@@ -129,6 +137,7 @@ maxSpinInput.addEventListener('input', () => {
     maxSpin = v;
     spinSlider.max = v;
     if (parseFloat(spinSlider.value) > v) spinSlider.value = v;
+    spinValueDisplay.textContent = spinSlider.value;
   }
 });
 
@@ -150,6 +159,7 @@ Events.on(mouseConstraint, 'enddrag', (event) => {
     const spin = parseFloat(spinSlider.value);
     if (!isNaN(spin)) {
       Body.setAngularVelocity(ball, spin);
+      spinValueDisplay.textContent = spinSlider.value;
     }
   }
 });
@@ -165,6 +175,10 @@ Events.on(engine, 'beforeUpdate', () => {
   }
   if (!ballLaunched && speed > 0.1) {
     ballLaunched = true;
+  }
+  if (ballLaunched && speed > 0.1 && Math.abs(ball.angularVelocity) > 0.001) {
+    const forceX = ball.angularVelocity * SPIN_CURVE_FORCE;
+    Body.applyForce(ball, ball.position, { x: forceX, y: 0 });
   }
 });
 
