@@ -45,7 +45,11 @@ const leftWall = Bodies.rectangle(startX - laneWidth / 2, height / 2, 40, height
 const rightWall = Bodies.rectangle(startX + laneWidth / 2, height / 2, 40, height, {
   isStatic: true
 });
-World.add(world, [ground, leftWall, rightWall]);
+const topSensor = Bodies.rectangle(startX, 20, laneWidth + 40, 20, {
+  isStatic: true,
+  isSensor: true
+});
+World.add(world, [ground, leftWall, rightWall, topSensor]);
 
 // Pins setup (diamond arrangement)
 // Start position roughly a quarter way down the lane
@@ -201,6 +205,15 @@ Events.on(engine, 'collisionStart', (event) => {
         gutterHit = false;
         gameOver = false;
       }, 100);
+    }
+
+    // Stop the ball or pins if they touch the top sensor
+    const hitTopSensorA = bodyA === topSensor && (bodyB === ball || pins.includes(bodyB));
+    const hitTopSensorB = bodyB === topSensor && (bodyA === ball || pins.includes(bodyA));
+    if (hitTopSensorA || hitTopSensorB) {
+      const target = hitTopSensorA ? bodyB : bodyA;
+      Body.setVelocity(target, { x: 0, y: 0 });
+      Body.setAngularVelocity(target, 0);
     }
   });
 });
