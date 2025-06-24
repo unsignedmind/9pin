@@ -119,6 +119,9 @@ Events.on(engine, 'beforeUpdate', () => {
     const scale = maxVelocity / speed;
     Body.setVelocity(ball, { x: vx * scale, y: vy * scale });
   }
+  if (!ballLaunched && speed > 0.1) {
+    ballLaunched = true;
+  }
 });
 
 // Reset button handler
@@ -128,6 +131,8 @@ document.getElementById('resetButton').addEventListener('click', reset);
 function reset() {
   score = 0;
   gameOver = false;
+  ballLaunched = false;
+  gutterHit = false;
   Body.setPosition(ball, { x: width / 2, y: height - 60 });
   Body.setVelocity(ball, { x: 0, y: 0 });
   Body.setAngularVelocity(ball, 0);
@@ -139,6 +144,7 @@ function reset() {
 let score = 0;
 let gutterHit = false;
 let gameOver = false;
+let ballLaunched = false;
 
 Events.on(engine, 'collisionStart', (event) => {
   if (gutterHit) return;
@@ -177,7 +183,7 @@ Events.on(engine, 'afterUpdate', () => {
     (p) => Math.abs(p.velocity.x) < threshold && Math.abs(p.velocity.y) < threshold
   );
 
-  if (!gameOver && ballStopped && pinsStopped) {
+  if (ballLaunched && !gameOver && ballStopped && pinsStopped) {
     gameOver = true;
     setTimeout(() => {
       alert('Score: ' + score);
