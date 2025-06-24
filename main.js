@@ -138,6 +138,7 @@ Events.on(mouseConstraint, 'enddrag', (event) => {
     if (!isNaN(spin)) {
       Body.setAngularVelocity(ball, spin);
       spinValueDisplay.textContent = spinSlider.value;
+      curveCanceled = false;
     }
   }
 });
@@ -154,7 +155,12 @@ Events.on(engine, 'beforeUpdate', () => {
   if (!ballLaunched && speed > 0.1) {
     ballLaunched = true;
   }
-  if (ballLaunched && speed > 0.1 && Math.abs(ball.angularVelocity) > 0.001) {
+  if (
+    ballLaunched &&
+    !curveCanceled &&
+    speed > 0.1 &&
+    Math.abs(ball.angularVelocity) > 0.001
+  ) {
     // Scale the curve force so that higher ball speeds yield a weaker effect
     const velocityScale = 1 / (1 + speed);
     const forceX = ball.angularVelocity * SPIN_CURVE_FORCE * velocityScale;
@@ -171,6 +177,7 @@ function reset() {
   gameOver = false;
   ballLaunched = false;
   gutterHit = false;
+  curveCanceled = false;
   Body.setPosition(ball, { x: width / 2, y: height - 60 });
   Body.setVelocity(ball, { x: 0, y: 0 });
   Body.setAngularVelocity(ball, 0);
@@ -183,6 +190,7 @@ let score = 0;
 let gutterHit = false;
 let gameOver = false;
 let ballLaunched = false;
+let curveCanceled = false;
 
 Events.on(engine, 'collisionStart', (event) => {
   if (gutterHit) return;
@@ -199,6 +207,16 @@ Events.on(engine, 'collisionStart', (event) => {
         gutterHit = false;
         gameOver = false;
       }, 100);
+    }
+
+    // Cancel curve when the ball first hits a pin or side wall
+    const hitPinOrWall =
+      (bodyA === ball &&
+        (pins.includes(bodyB) || bodyB === leftWall || bodyB === rightWall)) ||
+      (bodyB === ball &&
+        (pins.includes(bodyA) || bodyA === leftWall || bodyA === rightWall));
+    if (hitPinOrWall) {
+      curveCanceled = true;
     }
 
     // Stop the ball or pins if they touch the top sensor
