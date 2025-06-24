@@ -39,13 +39,13 @@ const laneWidth = gutterOffset * 2;
 const ground = Bodies.rectangle(startX, height - 20, laneWidth + 40, 40, {
   isStatic: true
 });
-const leftWall = Bodies.rectangle(startX - laneWidth / 2, height / 2, 40, height, {
+const leftWall = Bodies.rectangle(startX - laneWidth / 1.8, height / 2, 40, height, {
   isStatic: true
 });
-const rightWall = Bodies.rectangle(startX + laneWidth / 2, height / 2, 40, height, {
+const rightWall = Bodies.rectangle(startX + laneWidth / 1.8, height / 2, 40, height, {
   isStatic: true
 });
-const topSensor = Bodies.rectangle(startX, 20, laneWidth + 40, 20, {
+const topSensor = Bodies.rectangle(startX, 0, laneWidth + 40, 20, {
   isStatic: true,
   isSensor: true
 });
@@ -57,12 +57,13 @@ const startY = height / 4;
 
 // Gutters detect when the ball leaves the lane. The gap from the outermost
 // pin to each gutter equals half the width of the full pin formation.
-const gutterWidth = 80;
-const gutterLeft = Bodies.rectangle(startX - gutterOffset, height / 2, gutterWidth, height, {
+const gutterWidth = 40;
+const gutterScoringAreaOffset = 330;
+const gutterLeft = Bodies.rectangle(startX - gutterOffset, height - gutterScoringAreaOffset, gutterWidth, height - gutterScoringAreaOffset, {
   isStatic: true,
   isSensor: true
 });
-const gutterRight = Bodies.rectangle(startX + gutterOffset, height / 2, gutterWidth, height, {
+const gutterRight = Bodies.rectangle(startX + gutterOffset, height - gutterScoringAreaOffset, gutterWidth, height - gutterScoringAreaOffset, {
   isStatic: true,
   isSensor: true
 });
@@ -104,8 +105,6 @@ maxVelocityInput.addEventListener('input', () => {
 
 // Spin controls
 const spinSlider = document.getElementById('spinSlider');
-const minSpinInput = document.getElementById('minSpin');
-const maxSpinInput = document.getElementById('maxSpin');
 const spinValueDisplay = document.getElementById('spinValue');
 const SPIN_CURVE_FORCE = 0.0005;
 let minSpin = -3;
@@ -114,31 +113,10 @@ spinSlider.min = minSpin;
 spinSlider.max = maxSpin;
 spinSlider.value = 0;
 spinValueDisplay.textContent = '0';
-minSpinInput.value = minSpin;
-maxSpinInput.value = maxSpin;
+
 
 spinSlider.addEventListener('input', () => {
   spinValueDisplay.textContent = spinSlider.value;
-});
-
-minSpinInput.addEventListener('input', () => {
-  const v = parseFloat(minSpinInput.value);
-  if (!isNaN(v)) {
-    minSpin = v;
-    spinSlider.min = v;
-    if (parseFloat(spinSlider.value) < v) spinSlider.value = v;
-    spinValueDisplay.textContent = spinSlider.value;
-  }
-});
-
-maxSpinInput.addEventListener('input', () => {
-  const v = parseFloat(maxSpinInput.value);
-  if (!isNaN(v)) {
-    maxSpin = v;
-    spinSlider.max = v;
-    if (parseFloat(spinSlider.value) > v) spinSlider.value = v;
-    spinValueDisplay.textContent = spinSlider.value;
-  }
 });
 
 // Mouse control
@@ -236,7 +214,7 @@ Events.on(engine, 'collisionStart', (event) => {
 Events.on(engine, 'afterUpdate', () => {
   // Award points for pins that tip over past a certain angle
   pins.forEach((pin) => {
-    if (!pin.scored && (pin.angle > 0.1 || pin.angle < -0.1)) {
+    if (!pin.scored && (pin.angle > 0.05 || pin.angle < -0.05)) {
       pin.scored = true;
       score += 1;
       World.remove(world, pin);
