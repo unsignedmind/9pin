@@ -3,6 +3,8 @@ const { Engine, Render, Runner, World, Bodies, Body, Events, Mouse, MouseConstra
 
 const engine = Engine.create();
 const world = engine.world;
+// Disable gravity for a top-down view so pins don't fall off the screen
+world.gravity.y = 0;
 
 const canvas = document.getElementById('gameCanvas');
 const width = window.innerWidth;
@@ -33,9 +35,9 @@ World.add(world, [ground, leftWall, rightWall]);
 // Pins setup (diamond arrangement)
 const pinRadius = 15;
 const startX = width / 2;
-// Place the pins near the bottom so they sit on the ground instead of
-// dropping from the top of the screen.
-const startY = height - 100;
+// Original starting height, used now that gravity is disabled so
+// the pins stay in place.
+const startY = height / 4;
 let pins = [];
 for (let row = 0; row < 3; row++) {
   for (let i = 0; i <= row; i++) {
