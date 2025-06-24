@@ -108,8 +108,8 @@ const minSpinInput = document.getElementById('minSpin');
 const maxSpinInput = document.getElementById('maxSpin');
 const spinValueDisplay = document.getElementById('spinValue');
 const SPIN_CURVE_FORCE = 0.0005;
-let minSpin = -1;
-let maxSpin = 1;
+let minSpin = -3;
+let maxSpin = 3;
 spinSlider.min = minSpin;
 spinSlider.max = maxSpin;
 spinSlider.value = 0;
@@ -236,7 +236,7 @@ Events.on(engine, 'collisionStart', (event) => {
 Events.on(engine, 'afterUpdate', () => {
   // Award points for pins that tip over past a certain angle
   pins.forEach((pin) => {
-    if (!pin.scored && (pin.angle > 0.7 || pin.angle < -0.7)) {
+    if (!pin.scored && (pin.angle > 0.1 || pin.angle < -0.1)) {
       pin.scored = true;
       score += 1;
       World.remove(world, pin);
