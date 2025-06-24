@@ -74,6 +74,9 @@ function setupPins() {
       const x = startX + (i - row / 2) * pinSpacing;
       const y = startY - row * pinSpacing;
       const pin = Bodies.circle(x, y, pinRadius, { restitution: 0.5 });
+      pin.startX = x;
+      pin.startY = y;
+      pin.scored = false;
       pins.push(pin);
     }
   }
@@ -124,6 +127,7 @@ document.getElementById('resetButton').addEventListener('click', reset);
 // Reset function
 function reset() {
   score = 0;
+  gameOver = false;
   Body.setPosition(ball, { x: width / 2, y: height - 60 });
   Body.setVelocity(ball, { x: 0, y: 0 });
   Body.setAngularVelocity(ball, 0);
@@ -131,9 +135,10 @@ function reset() {
   setupPins();
 }
 
-// Simple scoring when pins fall below a certain angle
+// Track scoring and game state
 let score = 0;
 let gutterHit = false;
+let gameOver = false;
 
 Events.on(engine, 'collisionStart', (event) => {
   if (gutterHit) return;
@@ -143,28 +148,43 @@ Events.on(engine, 'collisionStart', (event) => {
       (bodyB === ball && (bodyA === gutterLeft || bodyA === gutterRight))
     ) {
       gutterHit = true;
+      gameOver = true;
       setTimeout(() => {
         alert('Gutter! Score: 0');
         reset();
         gutterHit = false;
+        gameOver = false;
       }, 100);
     }
   });
 });
 Events.on(engine, 'afterUpdate', () => {
+  // Award points for pins that have moved from their starting position
   pins.forEach((pin) => {
-    if (!pin.isSleeping && (pin.angle > 0.7 || pin.angle < -0.7)) {
-      score += 1;
-      World.remove(world, pin);
-      pins = pins.filter((p) => p !== pin);
+    if (!pin.scored) {
+      const dx = pin.position.x - pin.startX;
+      const dy = pin.position.y - pin.startY;
+      if (Math.sqrt(dx * dx + dy * dy) > pinRadius * 0.5) {
+        pin.scored = true;
+        score += 1;
+      }
     }
   });
 
-  if (pins.length === 0) {
+  // Determine if the ball and all pins have come to rest
+  const threshold = 0.05;
+  const ballStopped =
+    Math.abs(ball.velocity.x) < threshold && Math.abs(ball.velocity.y) < threshold;
+  const pinsStopped = pins.every(
+    (p) => Math.abs(p.velocity.x) < threshold && Math.abs(p.velocity.y) < threshold
+  );
+
+  if (!gameOver && ballStopped && pinsStopped) {
+    gameOver = true;
     setTimeout(() => {
       alert('Score: ' + score);
       reset();
-    }, 1000);
+    }, 500);
   }
 });
 
