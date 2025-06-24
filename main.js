@@ -177,7 +177,9 @@ Events.on(engine, 'beforeUpdate', () => {
     ballLaunched = true;
   }
   if (ballLaunched && speed > 0.1 && Math.abs(ball.angularVelocity) > 0.001) {
-    const forceX = ball.angularVelocity * SPIN_CURVE_FORCE;
+    // Scale the curve force so that higher ball speeds yield a weaker effect
+    const velocityScale = 1 / (1 + speed);
+    const forceX = ball.angularVelocity * SPIN_CURVE_FORCE * velocityScale;
     Body.applyForce(ball, ball.position, { x: forceX, y: 0 });
   }
 });
