@@ -32,22 +32,44 @@ const leftWall = Bodies.rectangle(0, height / 2, 40, height, { isStatic: true })
 const rightWall = Bodies.rectangle(width, height / 2, 40, height, { isStatic: true });
 World.add(world, [ground, leftWall, rightWall]);
 
+// Gutters detect when the ball leaves the lane
+const gutterWidth = 80;
+const gutterLeft = Bodies.rectangle(40 + gutterWidth / 2, height / 2, gutterWidth, height, {
+  isStatic: true,
+  isSensor: true
+});
+const gutterRight = Bodies.rectangle(width - (40 + gutterWidth / 2), height / 2, gutterWidth, height, {
+  isStatic: true,
+  isSensor: true
+});
+World.add(world, [gutterLeft, gutterRight]);
+
 // Pins setup (diamond arrangement)
 const pinRadius = 15;
 const startX = width / 2;
 // Original starting height, used now that gravity is disabled so
 // the pins stay in place.
 const startY = height / 4;
+// Space between pins (doubled from the original layout)
+const pinSpacing = pinRadius * 5;
 let pins = [];
-for (let row = 0; row < 3; row++) {
-  for (let i = 0; i <= row; i++) {
-    const x = startX + (i - row / 2) * pinRadius * 2.5;
-    const y = startY - row * pinRadius * 2.5;
-    const pin = Bodies.circle(x, y, pinRadius, { restitution: 0.5 });
-    pins.push(pin);
+
+function setupPins() {
+  // Remove any existing pins and recreate them with the desired spacing
+  pins.forEach((pin) => World.remove(world, pin));
+  pins = [];
+  for (let row = 0; row < 3; row++) {
+    for (let i = 0; i <= row; i++) {
+      const x = startX + (i - row / 2) * pinSpacing;
+      const y = startY - row * pinSpacing;
+      const pin = Bodies.circle(x, y, pinRadius, { restitution: 0.5 });
+      pins.push(pin);
+    }
   }
+  World.add(world, pins);
 }
-World.add(world, pins);
+
+setupPins();
 
 // Bowling ball
 const ball = Bodies.circle(width / 2, height - 60, 20, { restitution: 0.5 });
@@ -65,25 +87,39 @@ const mouseConstraint = MouseConstraint.create(engine, {
 World.add(world, mouseConstraint);
 render.mouse = mouse;
 
+// Reset button handler
+document.getElementById('resetButton').addEventListener('click', reset);
+
 // Reset function
 function reset() {
+  score = 0;
   Body.setPosition(ball, { x: width / 2, y: height - 60 });
   Body.setVelocity(ball, { x: 0, y: 0 });
   Body.setAngularVelocity(ball, 0);
 
-  pins.forEach((pin, index) => {
-    const row = Math.floor((Math.sqrt(8 * index + 1) - 1) / 2);
-    const idxInRow = index - (row * (row + 1)) / 2;
-    const x = startX + (idxInRow - row / 2) * pinRadius * 2.5;
-    const y = startY - row * pinRadius * 2.5;
-    Body.setPosition(pin, { x, y });
-    Body.setVelocity(pin, { x: 0, y: 0 });
-    Body.setAngularVelocity(pin, 0);
-  });
+  setupPins();
 }
 
 // Simple scoring when pins fall below a certain angle
 let score = 0;
+let gutterHit = false;
+
+Events.on(engine, 'collisionStart', (event) => {
+  if (gutterHit) return;
+  event.pairs.forEach(({ bodyA, bodyB }) => {
+    if (
+      (bodyA === ball && (bodyB === gutterLeft || bodyB === gutterRight)) ||
+      (bodyB === ball && (bodyA === gutterLeft || bodyA === gutterRight))
+    ) {
+      gutterHit = true;
+      setTimeout(() => {
+        alert('Gutter! Score: 0');
+        reset();
+        gutterHit = false;
+      }, 100);
+    }
+  });
+});
 Events.on(engine, 'afterUpdate', () => {
   pins.forEach((pin) => {
     if (!pin.isSleeping && (pin.angle > 0.7 || pin.angle < -0.7)) {
@@ -96,17 +132,6 @@ Events.on(engine, 'afterUpdate', () => {
   if (pins.length === 0) {
     setTimeout(() => {
       alert('Score: ' + score);
-      score = 0;
-      pins = [];
-      for (let row = 0; row < 3; row++) {
-        for (let i = 0; i <= row; i++) {
-          const x = startX + (i - row / 2) * pinRadius * 2.5;
-          const y = startY - row * pinRadius * 2.5;
-          const pin = Bodies.circle(x, y, pinRadius, { restitution: 0.5 });
-          pins.push(pin);
-        }
-      }
-      World.add(world, pins);
       reset();
     }, 1000);
   }
