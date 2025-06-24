@@ -98,6 +98,36 @@ maxVelocityInput.addEventListener('input', () => {
   if (!isNaN(v)) maxVelocity = v;
 });
 
+// Spin controls
+const spinSlider = document.getElementById('spinSlider');
+const minSpinInput = document.getElementById('minSpin');
+const maxSpinInput = document.getElementById('maxSpin');
+let minSpin = -1;
+let maxSpin = 1;
+spinSlider.min = minSpin;
+spinSlider.max = maxSpin;
+spinSlider.value = 0;
+minSpinInput.value = minSpin;
+maxSpinInput.value = maxSpin;
+
+minSpinInput.addEventListener('input', () => {
+  const v = parseFloat(minSpinInput.value);
+  if (!isNaN(v)) {
+    minSpin = v;
+    spinSlider.min = v;
+    if (parseFloat(spinSlider.value) < v) spinSlider.value = v;
+  }
+});
+
+maxSpinInput.addEventListener('input', () => {
+  const v = parseFloat(maxSpinInput.value);
+  if (!isNaN(v)) {
+    maxSpin = v;
+    spinSlider.max = v;
+    if (parseFloat(spinSlider.value) > v) spinSlider.value = v;
+  }
+});
+
 // Mouse control
 const mouse = Mouse.create(render.canvas);
 const mouseConstraint = MouseConstraint.create(engine, {
@@ -109,6 +139,16 @@ const mouseConstraint = MouseConstraint.create(engine, {
 });
 World.add(world, mouseConstraint);
 render.mouse = mouse;
+
+// Apply spin when the ball is released
+Events.on(mouseConstraint, 'enddrag', (event) => {
+  if (event.body === ball) {
+    const spin = parseFloat(spinSlider.value);
+    if (!isNaN(spin)) {
+      Body.setAngularVelocity(ball, spin);
+    }
+  }
+});
 
 // Clamp ball velocity based on user input
 Events.on(engine, 'beforeUpdate', () => {
