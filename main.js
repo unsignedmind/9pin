@@ -33,7 +33,9 @@ World.add(world, [ground, leftWall, rightWall]);
 // Pins setup (diamond arrangement)
 const pinRadius = 15;
 const startX = width / 2;
-const startY = height / 4;
+// Place the pins near the bottom so they sit on the ground instead of
+// dropping from the top of the screen.
+const startY = height - 100;
 let pins = [];
 for (let row = 0; row < 3; row++) {
   for (let i = 0; i <= row; i++) {
