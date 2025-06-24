@@ -159,15 +159,13 @@ Events.on(engine, 'collisionStart', (event) => {
   });
 });
 Events.on(engine, 'afterUpdate', () => {
-  // Award points for pins that have moved from their starting position
+  // Award points for pins that tip over past a certain angle
   pins.forEach((pin) => {
-    if (!pin.scored) {
-      const dx = pin.position.x - pin.startX;
-      const dy = pin.position.y - pin.startY;
-      if (Math.sqrt(dx * dx + dy * dy) > pinRadius * 0.5) {
-        pin.scored = true;
-        score += 1;
-      }
+    if (!pin.scored && (pin.angle > 0.7 || pin.angle < -0.7)) {
+      pin.scored = true;
+      score += 1;
+      World.remove(world, pin);
+      pins = pins.filter((p) => p !== pin);
     }
   });
 
