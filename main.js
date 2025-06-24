@@ -45,7 +45,11 @@ const leftWall = Bodies.rectangle(startX - laneWidth / 2, height / 2, 40, height
 const rightWall = Bodies.rectangle(startX + laneWidth / 2, height / 2, 40, height, {
   isStatic: true
 });
-World.add(world, [ground, leftWall, rightWall]);
+const topSensor = Bodies.rectangle(startX, 20, laneWidth + 40, 20, {
+  isStatic: true,
+  isSensor: true
+});
+World.add(world, [ground, leftWall, rightWall, topSensor]);
 
 // Pins setup (diamond arrangement)
 // Start position roughly a quarter way down the lane
@@ -98,6 +102,45 @@ maxVelocityInput.addEventListener('input', () => {
   if (!isNaN(v)) maxVelocity = v;
 });
 
+// Spin controls
+const spinSlider = document.getElementById('spinSlider');
+const minSpinInput = document.getElementById('minSpin');
+const maxSpinInput = document.getElementById('maxSpin');
+const spinValueDisplay = document.getElementById('spinValue');
+const SPIN_CURVE_FORCE = 0.0005;
+let minSpin = -1;
+let maxSpin = 1;
+spinSlider.min = minSpin;
+spinSlider.max = maxSpin;
+spinSlider.value = 0;
+spinValueDisplay.textContent = '0';
+minSpinInput.value = minSpin;
+maxSpinInput.value = maxSpin;
+
+spinSlider.addEventListener('input', () => {
+  spinValueDisplay.textContent = spinSlider.value;
+});
+
+minSpinInput.addEventListener('input', () => {
+  const v = parseFloat(minSpinInput.value);
+  if (!isNaN(v)) {
+    minSpin = v;
+    spinSlider.min = v;
+    if (parseFloat(spinSlider.value) < v) spinSlider.value = v;
+    spinValueDisplay.textContent = spinSlider.value;
+  }
+});
+
+maxSpinInput.addEventListener('input', () => {
+  const v = parseFloat(maxSpinInput.value);
+  if (!isNaN(v)) {
+    maxSpin = v;
+    spinSlider.max = v;
+    if (parseFloat(spinSlider.value) > v) spinSlider.value = v;
+    spinValueDisplay.textContent = spinSlider.value;
+  }
+});
+
 // Mouse control
 const mouse = Mouse.create(render.canvas);
 const mouseConstraint = MouseConstraint.create(engine, {
@@ -110,6 +153,17 @@ const mouseConstraint = MouseConstraint.create(engine, {
 World.add(world, mouseConstraint);
 render.mouse = mouse;
 
+// Apply spin when the ball is released
+Events.on(mouseConstraint, 'enddrag', (event) => {
+  if (event.body === ball) {
+    const spin = parseFloat(spinSlider.value);
+    if (!isNaN(spin)) {
+      Body.setAngularVelocity(ball, spin);
+      spinValueDisplay.textContent = spinSlider.value;
+    }
+  }
+});
+
 // Clamp ball velocity based on user input
 Events.on(engine, 'beforeUpdate', () => {
   const vx = ball.velocity.x;
@@ -121,6 +175,10 @@ Events.on(engine, 'beforeUpdate', () => {
   }
   if (!ballLaunched && speed > 0.1) {
     ballLaunched = true;
+  }
+  if (ballLaunched && speed > 0.1 && Math.abs(ball.angularVelocity) > 0.001) {
+    const forceX = ball.angularVelocity * SPIN_CURVE_FORCE;
+    Body.applyForce(ball, ball.position, { x: forceX, y: 0 });
   }
 });
 
@@ -161,6 +219,15 @@ Events.on(engine, 'collisionStart', (event) => {
         gutterHit = false;
         gameOver = false;
       }, 100);
+    }
+
+    // Stop the ball or pins if they touch the top sensor
+    const hitTopSensorA = bodyA === topSensor && (bodyB === ball || pins.includes(bodyB));
+    const hitTopSensorB = bodyB === topSensor && (bodyA === ball || pins.includes(bodyA));
+    if (hitTopSensorA || hitTopSensorB) {
+      const target = hitTopSensorA ? bodyB : bodyA;
+      Body.setVelocity(target, { x: 0, y: 0 });
+      Body.setAngularVelocity(target, 0);
     }
   });
 });
