@@ -27,25 +27,33 @@ Render.run(render);
 Runner.run(Runner.create(), engine);
 
 // Boundaries
-const ground = Bodies.rectangle(width / 2, height - 20, width, 40, { isStatic: true });
-const leftWall = Bodies.rectangle(0, height / 2, 40, height, { isStatic: true });
-const rightWall = Bodies.rectangle(width, height / 2, 40, height, { isStatic: true });
+// Narrow lane around the pins
+const pinRadius = 15;
+// Space between pins (doubled from the original layout)
+const pinSpacing = pinRadius * 5;
+const startX = width / 2;
+// Width between the two gutters
+const gutterOffset = pinSpacing * 2;
+const laneWidth = gutterOffset * 2;
+
+const ground = Bodies.rectangle(startX, height - 20, laneWidth + 40, 40, {
+  isStatic: true
+});
+const leftWall = Bodies.rectangle(startX - laneWidth / 2, height / 2, 40, height, {
+  isStatic: true
+});
+const rightWall = Bodies.rectangle(startX + laneWidth / 2, height / 2, 40, height, {
+  isStatic: true
+});
 World.add(world, [ground, leftWall, rightWall]);
 
 // Pins setup (diamond arrangement)
-const pinRadius = 15;
-const startX = width / 2;
-// Pins should lie near the bottom of the screen in a top-down view
-const startY = height - 100;
-// Space between pins (doubled from the original layout)
-const pinSpacing = pinRadius * 5;
+// Start position roughly a quarter way down the lane
+const startY = height / 4;
 
 // Gutters detect when the ball leaves the lane. The gap from the outermost
 // pin to each gutter equals half the width of the full pin formation.
 const gutterWidth = 80;
-// Distance from center to each gutter so the gap from outer pin to gutter
-// equals half the pin formation width
-const gutterOffset = pinSpacing * 2;
 const gutterLeft = Bodies.rectangle(startX - gutterOffset, height / 2, gutterWidth, height, {
   isStatic: true,
   isSensor: true
